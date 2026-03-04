@@ -1,5 +1,5 @@
 # Core dependencies
-ccxt==4.2.0
+ccxt>=4.5.0
 python-dotenv==1.0.0
 pyyaml==6.0.1
 requests==2.31.0
@@ -7,7 +7,7 @@ requests==2.31.0
 # Data analysis
 pandas==2.2.0
 numpy==1.26.0
-ta-lib==0.4.28
+# ta-lib==0.4.28  # Optionnel - difficile sur Windows, RSI codé manuellement
 
 # Blockchain
 web3==6.15.0
