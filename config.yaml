@@ -1,0 +1,54 @@
+# Configuration principale du bot
+
+trading:
+  mode: testnet  # testnet ou live
+  capital_initial: 5.0  # EUR
+  max_risk_per_trade: 0.02  # 2% du capital
+  max_positions: 2  # Nombre de positions simultanées max
+  
+strategies:
+  dca:
+    enabled: true
+    pairs:
+      - BTC/USDT
+      - ETH/USDT
+    buy_threshold_rsi: 30
+    sell_threshold_rsi: 70
+    sma_period: 20
+    interval: 1h  # 1h, 4h, 1d
+    trade_amount_percent: 0.5  # 50% du capital par trade
+    
+  grid:
+    enabled: false
+    pair: BTC/USDT
+    grid_spacing_percent: 3.0  # Espacement entre ordres
+    num_levels: 5  # Nombre de niveaux
+    range_top: 45000
+    range_bottom: 40000
+
+blockscout:
+  default_chain_id: "1"  # Ethereum mainnet
+  timeout: 30
+  
+exchanges:
+  binance:
+    testnet: true
+    timeout: 10
+    rate_limit: true
+    
+risk_management:
+  stop_loss_percent: 2.0  # Stop loss à -2%
+  take_profit_percent: 5.0  # Take profit à +5%
+  max_drawdown_percent: 10.0  # Arrêt si drawdown > 10%
+  
+notifications:
+  telegram:
+    enabled: false
+    on_trade: true
+    on_error: true
+    daily_report: true
+  
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
+  file: logs/bot.log
+  console: true
