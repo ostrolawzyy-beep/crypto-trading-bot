@@ -128,7 +128,7 @@ def run_backtest(config: dict, args: argparse.Namespace) -> None:
 
         # Afficher résultats
         logger.info("\n" + "="*60)
-        logger.info("RESULTATS BACKTEST - REALISTE (avec frais & slippage)")
+        logger.info("RESULTATS BACKTEST - REALISTE (frais + slippage + stops)")
         logger.info("="*60)
         logger.info(f"Capital initial: {results['initial_capital']:.2f} EUR")
         logger.info(f"Capital final: {results['final_capital']:.2f} EUR")
@@ -144,6 +144,11 @@ def run_backtest(config: dict, args: argparse.Namespace) -> None:
         logger.info(f"Perte moyenne (losers): {results['avg_loss']:+.4f} EUR")
         logger.info(f"Max Drawdown: {results['max_drawdown']:.2f}%")
         logger.info(f"Sharpe Ratio: {results['sharpe_ratio']:.2f}")
+        logger.info("")
+        logger.info("=== STOPS & PROTECTIONS ===")
+        logger.info(f"Stop-loss déclenchés: {results['stop_loss_triggered']}")
+        logger.info(f"Trailing stop déclenchés: {results['trailing_stop_triggered']}")
+        logger.info(f"Ventes sur signal RSI: {results['signal_sells']}")
         logger.info("="*60)
         
         # Interprétation
@@ -167,6 +172,13 @@ def run_backtest(config: dict, args: argparse.Namespace) -> None:
             logger.warning("[~] Drawdown 5-10%: risque acceptable")
         else:
             logger.error(f"[-] Drawdown > 10%: DANGER ({results['max_drawdown']:.1f}%)")
+        
+        # Stop-loss effectiveness
+        if results['stop_loss_triggered'] > 0:
+            logger.info(f"[+] Stop-loss actifs: protection contre pertes (-2%)")
+        if results['trailing_stop_triggered'] > 0:
+            logger.info(f"[+] Trailing stop actifs: gains sécurisés (-1.5%)")
+        
         logger.info("="*60)
 
     except Exception as e:
@@ -218,7 +230,7 @@ def main():
 
     # Banner
     logger.info("="*60)
-    logger.info("BOT TRADING CRYPTO v0.1.0")
+    logger.info("BOT TRADING CRYPTO v0.2.0 - Risk Management Edition")
     logger.info(f"Mode: {args.mode.upper()}")
     logger.info("="*60)
 

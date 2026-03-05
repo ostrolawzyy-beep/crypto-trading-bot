@@ -1,54 +1,53 @@
-# Configuration principale du bot
+# Configuration du bot de trading crypto
+version: "1.0.0"
 
-trading:
-  mode: testnet  # testnet ou live
-  capital_initial: 5.0  # EUR
-  max_risk_per_trade: 0.02  # 2% du capital
-  max_positions: 2  # Nombre de positions simultanées max
-  
+# Configuration de l'environnement
+environment: "testnet"  # testnet ou production
+
+# Exchanges
+exchanges:
+  binance:
+    testnet: true
+    # Les clés API sont dans .env
+
+# Stratégies de trading
 strategies:
   dca:
     enabled: true
     pairs:
-      - BTC/USDT
-      - ETH/USDT
+      - "BTC/USDT"
+      - "ETH/USDT"
+    interval: "1h"
     buy_threshold_rsi: 30
     sell_threshold_rsi: 70
     sma_period: 20
-    interval: 1h  # 1h, 4h, 1d
     trade_amount_percent: 0.5  # 50% du capital par trade
     
-  grid:
-    enabled: false
-    pair: BTC/USDT
-    grid_spacing_percent: 3.0  # Espacement entre ordres
-    num_levels: 5  # Nombre de niveaux
-    range_top: 45000
-    range_bottom: 40000
-
-blockscout:
-  default_chain_id: "1"  # Ethereum mainnet
-  timeout: 30
-  
-exchanges:
-  binance:
-    testnet: true
-    timeout: 10
-    rate_limit: true
+    # NOUVEAU: Frais et slippage
+    maker_fee: 0.001  # 0.1% Binance maker
+    taker_fee: 0.001  # 0.1% Binance taker
+    slippage: 0.0005  # 0.05% slippage moyen
     
-risk_management:
-  stop_loss_percent: 2.0  # Stop loss à -2%
-  take_profit_percent: 5.0  # Take profit à +5%
-  max_drawdown_percent: 10.0  # Arrêt si drawdown > 10%
-  
-notifications:
-  telegram:
-    enabled: false
-    on_trade: true
-    on_error: true
-    daily_report: true
-  
+    # NOUVEAU: Risk Management
+    stop_loss_pct: 0.02  # -2% stop loss (coupe pertes)
+    trailing_stop_pct: 0.015  # -1.5% trailing stop (sécurise gains)
+    use_kelly_criterion: false  # Sizing dynamique (désactivé par défaut)
+    kelly_fraction: 0.25  # 25% du Kelly optimal (conservateur)
+
+# Paramètres de trading
+trading:
+  capital_initial: 5.0  # Capital de départ en EUR
+  max_positions: 3  # Nombre max de positions simultanées
+  min_trade_size: 0.0001  # Taille minimum d'un trade
+
+# Logging
 logging:
-  level: INFO  # DEBUG, INFO, WARNING, ERROR
-  file: logs/bot.log
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/bot.log"
   console: true
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+# Blockscout (pour analyse blockchain future)
+blockscout:
+  enabled: false
+  api_url: "https://eth.blockscout.com/api"
