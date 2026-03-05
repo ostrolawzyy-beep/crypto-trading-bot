@@ -10,13 +10,8 @@ exclude =
     dist,
     *.egg-info
 
-# Ignorer certains warnings non-critiques
-ignore = 
-    W293,  # blank line contains whitespace
-    W291,  # trailing whitespace
-    E128,  # continuation line under-indented
+ignore = W293,W291,E128
 
-# Erreurs à vérifier vraiment
 select = E,F,W
 per-file-ignores =
     __init__.py:F401
