@@ -9,13 +9,13 @@ pandas==2.2.0
 numpy==1.26.0
 # ta-lib==0.4.28  # Optionnel - difficile sur Windows, RSI codé manuellement
 
-# Blockchain
-web3==6.15.0
+# Blockchain (web3 commenté temporairement - pas besoin pour phase 1)
+# web3==6.15.0  # Décommenter quand besoin de Web3
 
 # Testing
 pytest==8.0.0
 pytest-cov==4.1.0
 
 # Utilities
-python-telegram-bot==20.8
+# python-telegram-bot==20.8  # Décommenter pour notifications
 click==8.1.7
