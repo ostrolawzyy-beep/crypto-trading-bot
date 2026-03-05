@@ -1,0 +1,23 @@
+[flake8]
+max-line-length = 100
+exclude = 
+    __pycache__,
+    venv,
+    .venv,
+    env,
+    .git,
+    build,
+    dist,
+    *.egg-info
+
+# Ignorer certains warnings non-critiques
+ignore = 
+    W293,  # blank line contains whitespace
+    W291,  # trailing whitespace
+    E128,  # continuation line under-indented
+
+# Erreurs à vérifier vraiment
+select = E,F,W
+per-file-ignores =
+    __init__.py:F401
+    tests/*:F401,F841
