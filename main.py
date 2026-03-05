@@ -128,13 +128,45 @@ def run_backtest(config: dict, args: argparse.Namespace) -> None:
 
         # Afficher résultats
         logger.info("\n" + "="*60)
-        logger.info("RESULTATS BACKTEST")
+        logger.info("RESULTATS BACKTEST - REALISTE (avec frais & slippage)")
         logger.info("="*60)
         logger.info(f"Capital initial: {results['initial_capital']:.2f} EUR")
         logger.info(f"Capital final: {results['final_capital']:.2f} EUR")
-        logger.info(f"Profit: {results['profit_percent']:.2f}%")
-        logger.info(f"Nombre de trades: {results['num_trades']}")
-        logger.info(f"Win rate: {results['win_rate']:.1f}%")
+        logger.info(f"Profit net: {results['profit_percent']:+.2f}%")
+        logger.info(f"Total frais payés: {results['total_fees']:.4f} EUR")
+        logger.info("")
+        logger.info(f"Nombre de trades: {results['num_trades']} ({results['num_buy']} BUY, {results['num_sell']} SELL)")
+        logger.info(f"Win rate: {results['win_rate']:.1f}% ({results['winning_trades']} gagnants, {results['losing_trades']} perdants)")
+        logger.info("")
+        logger.info("=== METRIQUES AVANCEES ===")
+        logger.info(f"Espérance de gain (EV): {results['expected_value']:+.4f} EUR/trade")
+        logger.info(f"Gain moyen (winners): {results['avg_win']:+.4f} EUR")
+        logger.info(f"Perte moyenne (losers): {results['avg_loss']:+.4f} EUR")
+        logger.info(f"Max Drawdown: {results['max_drawdown']:.2f}%")
+        logger.info(f"Sharpe Ratio: {results['sharpe_ratio']:.2f}")
+        logger.info("="*60)
+        
+        # Interprétation
+        logger.info("")
+        logger.info("=== INTERPRETATION ===")
+        if results['expected_value'] > 0:
+            logger.info("[+] EV positif: stratégie mathématiquement rentable")
+        else:
+            logger.warning("[-] EV négatif: stratégie perdante à long terme")
+        
+        if results['sharpe_ratio'] > 1:
+            logger.info("[+] Sharpe > 1: bon ratio rendement/risque")
+        elif results['sharpe_ratio'] > 0:
+            logger.warning("[~] Sharpe entre 0-1: risque modéré")
+        else:
+            logger.error("[-] Sharpe négatif: trop risqué")
+        
+        if abs(results['max_drawdown']) < 5:
+            logger.info("[+] Drawdown < 5%: risque contrôlé")
+        elif abs(results['max_drawdown']) < 10:
+            logger.warning("[~] Drawdown 5-10%: risque acceptable")
+        else:
+            logger.error(f"[-] Drawdown > 10%: DANGER ({results['max_drawdown']:.1f}%)")
         logger.info("="*60)
 
     except Exception as e:
