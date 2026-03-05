@@ -3,7 +3,7 @@ Stratégies de trading - Version 1: DCA optimisé.
 """
 import pandas as pd
 import logging
-from typing import Dict, Literal
+from typing import Dict, Literal, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class DCAStrategy:
         self.sma_period = config.get('sma_period', 20)
         self.pairs = config['pairs']
         self.interval = config.get('interval', '1h')
+        self.trade_amount_percent = config.get('trade_amount_percent', 0.5)
 
         logger.info(
             f"DCA Strategy init: RSI buy<{self.rsi_buy}, sell>{self.rsi_sell}, "
@@ -101,13 +102,13 @@ class DCAStrategy:
 
         # Génération signal
         if rsi < self.rsi_buy and current_price < sma:
-            logger.info(f"✅ Signal BUY: RSI={rsi:.2f} < {self.rsi_buy}, Prix < SMA")
+            logger.debug(f"Signal BUY: RSI={rsi:.2f} < {self.rsi_buy}, Prix < SMA")
             return "BUY"
         elif rsi > self.rsi_sell:
-            logger.info(f"💰 Signal SELL: RSI={rsi:.2f} > {self.rsi_sell}")
+            logger.debug(f"Signal SELL: RSI={rsi:.2f} > {self.rsi_sell}")
             return "SELL"
         else:
-            logger.debug("⏸️ Signal HOLD: conditions non remplies")
+            logger.debug("Signal HOLD: conditions non remplies")
             return "HOLD"
 
     def backtest(self, historical_data: pd.DataFrame, initial_capital: float = 100.0) -> Dict:
@@ -121,22 +122,100 @@ class DCAStrategy:
         Returns:
             Dict avec résultats: profit, nb_trades, win_rate, etc.
         """
-        # TODO: Implémenter logique complète de backtest
         logger.info(f"Backtesting sur {len(historical_data)} bougies...")
 
-        capital = initial_capital
+        # Variables de suivi
+        cash = initial_capital
+        position_size = 0.0  # Quantité de crypto détenue
+        position_entry_price = 0.0
         trades = []
+        in_position = False
 
-        # Simulation simplifiée
-        for i in range(self.sma_period, len(historical_data)):
+        # Parcourir les données historiques
+        for i in range(self.sma_period + 20, len(historical_data)):
+            # Fenêtre de données pour indicateurs
             window = historical_data.iloc[:i+1]
-            _ = self.generate_signal(window.tail(50))  # noqa: F841
-            # TODO: Logique achat/vente avec capital tracking
+            current_price = window['close'].iloc[-1]
+            current_time = window['timestamp'].iloc[-1]
+
+            # Générer signal
+            signal = self.generate_signal(window)
+
+            # Exécuter trade selon signal
+            if signal == "BUY" and not in_position and cash > 0:
+                # Acheter
+                trade_amount = cash * self.trade_amount_percent
+                position_size = trade_amount / current_price
+                position_entry_price = current_price
+                cash -= trade_amount
+                in_position = True
+
+                logger.info(
+                    f"[{current_time}] BUY {position_size:.6f} @ {current_price:.2f} "
+                    f"(total: {trade_amount:.2f})"
+                )
+
+                trades.append({
+                    'type': 'BUY',
+                    'timestamp': current_time,
+                    'price': current_price,
+                    'amount': position_size,
+                    'cost': trade_amount
+                })
+
+            elif signal == "SELL" and in_position:
+                # Vendre
+                sell_value = position_size * current_price
+                profit = sell_value - (position_size * position_entry_price)
+                profit_pct = (profit / (position_size * position_entry_price)) * 100
+
+                cash += sell_value
+
+                logger.info(
+                    f"[{current_time}] SELL {position_size:.6f} @ {current_price:.2f} "
+                    f"(total: {sell_value:.2f}, P&L: {profit:.2f} [{profit_pct:+.2f}%])"
+                )
+
+                trades.append({
+                    'type': 'SELL',
+                    'timestamp': current_time,
+                    'price': current_price,
+                    'amount': position_size,
+                    'revenue': sell_value,
+                    'profit': profit,
+                    'profit_pct': profit_pct
+                })
+
+                position_size = 0.0
+                in_position = False
+
+        # Calculer capital final (inclure position ouverte)
+        final_capital = cash
+        if in_position:
+            final_price = historical_data['close'].iloc[-1]
+            final_capital += position_size * final_price
+            logger.warning(
+                f"Position encore ouverte: {position_size:.6f} @ {final_price:.2f}"
+            )
+
+        # Calculer métriques
+        sell_trades = [t for t in trades if t['type'] == 'SELL']
+        winning_trades = [t for t in sell_trades if t['profit'] > 0]
+
+        win_rate = (len(winning_trades) / len(sell_trades) * 100) if sell_trades else 0
+        total_profit = sum(t['profit'] for t in sell_trades)
+        profit_percent = ((final_capital - initial_capital) / initial_capital) * 100
 
         return {
             "initial_capital": initial_capital,
-            "final_capital": capital,
-            "profit_percent": ((capital - initial_capital) / initial_capital) * 100,
+            "final_capital": final_capital,
+            "profit_percent": profit_percent,
+            "total_profit": total_profit,
             "num_trades": len(trades),
-            "win_rate": 0.0
+            "num_buy": len([t for t in trades if t['type'] == 'BUY']),
+            "num_sell": len(sell_trades),
+            "win_rate": win_rate,
+            "winning_trades": len(winning_trades),
+            "losing_trades": len(sell_trades) - len(winning_trades),
+            "trades": trades
         }
